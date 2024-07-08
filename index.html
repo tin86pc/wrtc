@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width">
+    <title>P2p </title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
+
+</head>
+
+<body>
+    <h1>Peer-to-Peer </h1>
+
+    <div id="my-id"></div>
+    <button id="copy-button">copy</button>
+    <button id="paste-button">paste</button>
+    <br><br>
+
+
+    <label for="receiver-id">ID:</label><br>
+    <input type="text" id="receiver-id" title="Input the ID from receive.html">
+    <button id="connect-button">Connect</button>
+    <div id="statu" class="status"></div>
+    <br>
+
+    <input type="text" id="sendMessageBox" placeholder="Enter a message..." autofocus="true" />
+    <button type="button" id="sendButton">Send</button>
+    <button type="button" id="clearMsgsButton">Clear Msgs</button>
+    
+    <div class="message" id="message"></div>
+
+    <script src="main.js"></script>
+
+</body>
+
+</html>
