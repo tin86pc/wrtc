@@ -13,44 +13,26 @@
 <body>
     <h1>Peer-to-Peer </h1>
 
-    <table class="control">
-        <tr>
-            <td class="title">Status:</td>
-            <td class="title">Messages:</td>
-        </tr>
-        <tr>
-            <td>
-                <div id="my-id" style="font-weight: bold;">My ID:</div>
-                <button id="copy-button">copy</button>
-                <button id="paste-button">paste</button>
-                <br>
-
-                <span style="font-weight: bold">ID: </span>
-                <input type="text" id="receiver-id" title="Input the ID from receive.html">
-                <button id="connect-button">Connect</button>
-            </td>
+    <div id="my-id"></div>
+    <button id="copy-button">copy</button>
+    <button id="paste-button">paste</button>
+    <br><br>
 
 
-            <td>
-                <input type="text" id="sendMessageBox" placeholder="Enter a message..." autofocus="true" />
-                <button type="button" id="sendButton">Send</button>
-                <button type="button" id="clearMsgsButton">Clear Msgs (Local)</button>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <div id="statu" class="status"></div>
-            </td>
-            <td>
-                <div class="message" id="message"></div>
-            </td>
-        </tr>
+    <label for="receiver-id">ID:</label><br>
+    <input type="text" id="receiver-id" title="Input the ID from receive.html">
+    <button id="connect-button">Connect</button>
+    <div id="statu" class="status"></div>
+    <br>
 
-    </table>
-
+    <input type="text" id="sendMessageBox" placeholder="Enter a message..." autofocus="true" />
+    <button type="button" id="sendButton">Send</button>
+    <button type="button" id="clearMsgsButton">Clear Msgs</button>
     
+    <div class="message" id="message"></div>
+
     <script src="main.js"></script>
-   
+
 </body>
 
 </html>
