@@ -1,0 +1,9 @@
+git init
+git add .
+git commit -m ""
+git push
+
+
+git branch -M main2
+git remote add origin https://github.com/tin86pc/wrtc.git
+git push -u origin main2

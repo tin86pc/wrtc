@@ -18,12 +18,17 @@ var clearMsgsButton = document.getElementById("clearMsgsButton");
 var connectButton = document.getElementById("connect-button");
 var cueString = "<span class=\"cueMsg\">Cue: </span>";
 
+var url_Domain = "https://tin86pc.github.io/wrtc/";
+
 /**
  * Create the Peer object for our end of the connection.
  *
  * Sets up callbacks that handle any events related to our
  * peer object.
  */
+
+
+
 function initialize() {
     // Create own peer object with connection to shared PeerJS server
     peer = new Peer(null, {
@@ -36,8 +41,10 @@ function initialize() {
             console.log('Received null id from peer open');
             peer.id = lastPeerId;
         } else {
-            lastPeerId = peer.id;
+            lastPeerId =  peer.id;
         }
+
+        taoQRcode(window.location.href +peer.id);
 
         recvId.textContent = "ID: " + peer.id;
         console.log('ID: ' + peer.id);
@@ -226,7 +233,7 @@ sendButton.addEventListener('click', function () {
             console.log("Sent: " + msg);
             addMessage("<span class=\"selfMsg\">Self: </span> " + msg);
         }
-        else{
+        else {
             sendMessageBox.focus();
         }
 
@@ -260,6 +267,17 @@ copyButton.addEventListener('click', () => {
 pasteButton.addEventListener('click', () => {
     navigator.clipboard.readText().then(text => recvIdInput.value = text);
 });
+
+function taoQRcode(nd) {
+    var qrcode = new QRCode("qrcode", {
+        text: nd,
+        width: 100,
+        height: 100,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+    });
+}
 
 // Since all our callbacks are setup, start the process of obtaining an ID
 initialize();
