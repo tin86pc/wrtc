@@ -39,17 +39,11 @@ function initialize() {
             lastPeerId = peer.id;
         }
 
-        recvId.textContent = peer.id;
+        recvId.textContent = "ID: " + peer.id;
         console.log('ID: ' + peer.id);
     });
 
     peer.on('connection', function (c) {
-
-        // Disallow incoming connections
-        // c.on('open', function () {
-        //     c.send("Sender does not accept incoming connections");
-        //     setTimeout(function () { c.close(); }, 500);
-        // });
 
         if (conn && conn.open) {
             c.on('open', function () {
@@ -209,22 +203,36 @@ function clearMessages() {
 
 // Listen for enter in message box
 sendMessageBox.addEventListener('keypress', function (e) {
-    var event = e || window.event;
-    var char = event.which || event.keyCode;
-    if (char == '13')
+    console.log(e);
+    if (e.code == "Enter") {
         sendButton.click();
+    }
+
+});
+
+document.addEventListener('keypress', function (e) {
+    if (e.code == "Enter") { 
+        sendButton.click();
+    }
 });
 
 // Send message
 sendButton.addEventListener('click', function () {
     if (conn && conn.open) {
         var msg = sendMessageBox.value;
-        sendMessageBox.value = "";
-        conn.send(msg);
-        console.log("Sent: " + msg);
-        addMessage("<span class=\"selfMsg\">Self: </span> " + msg);
+        if (msg != "") {
+            sendMessageBox.value = "";
+            conn.send(msg);
+            console.log("Sent: " + msg);
+            addMessage("<span class=\"selfMsg\">Self: </span> " + msg);
+        }
+        else{
+            sendMessageBox.focus();
+        }
+
     } else {
         console.log('Connection is closed');
+        sendMessageBox.focus();
     }
 });
 
@@ -234,7 +242,7 @@ clearMsgsButton.addEventListener('click', clearMessages);
 connectButton.addEventListener('click', join);
 
 copyButton.addEventListener('click', () => {
-    var copyText = recvId.textContent;
+    var copyText = peer.id;
 
     // Copy the text inside the text field
     navigator.clipboard.writeText(copyText)
