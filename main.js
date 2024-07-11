@@ -18,7 +18,7 @@ var clearMsgsButton = document.getElementById("clearMsgsButton");
 var connectButton = document.getElementById("connect-button");
 var cueString = "<span class=\"cueMsg\">Cue: </span>";
 
-var url_Domain = "https://tin86pc.github.io/wrtc/";
+
 
 /**
  * Create the Peer object for our end of the connection.
@@ -26,6 +26,16 @@ var url_Domain = "https://tin86pc.github.io/wrtc/";
  * Sets up callbacks that handle any events related to our
  * peer object.
  */
+
+
+// lấy tham số từ url
+const url = new URL(window.location.href);
+const textQR = url.searchParams.get('id');
+if(textQR!=null){
+ console.log(textQR);   
+ recvIdInput.value=textQR;
+}
+
 
 
 
@@ -41,10 +51,13 @@ function initialize() {
             console.log('Received null id from peer open');
             peer.id = lastPeerId;
         } else {
-            lastPeerId =  peer.id;
+            lastPeerId = peer.id;
         }
 
-        taoQRcode(window.location.href +peer.id);
+        const tqr = window.location.href + "?id=" + peer.id
+        console.log(tqr);
+
+        taoQRcode(tqr);
 
         recvId.textContent = "ID: " + peer.id;
         console.log('ID: ' + peer.id);
