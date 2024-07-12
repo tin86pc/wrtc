@@ -31,12 +31,20 @@ var cueString = "<span class=\"cueMsg\">Cue: </span>";
 // lấy tham số từ url
 const url = new URL(window.location.href);
 const textQR = url.searchParams.get('id');
-if(textQR!=null){
- console.log(textQR);   
- recvIdInput.value=textQR;
+if (textQR != null) {
+    console.log(textQR);
+    recvIdInput.value = textQR;
 }
 
 
+fetch('https://api.ipify.org?format=json')
+    .then(response => response.json())
+    .then(data => {
+        console.log(data.ip);
+    })
+    .catch(error => {
+        console.log('Error:', error);
+    });
 
 
 function initialize() {
