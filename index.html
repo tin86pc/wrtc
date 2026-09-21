@@ -1,47 +1,282 @@
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width">
-    <title>P2p </title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebRTC — Giao tiếp trực tiếp không máy chủ</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
+body{background:#121212;color:#fff;padding:15px;max-width:900px;margin:0 auto}
+h1{text-align:center;margin-bottom:20px;font-size:1.4rem;color:#4ade80}
+.box{background:#1e1e1e;border-radius:10px;padding:15px;margin-bottom:15px}
+h2{font-size:1rem;margin-bottom:10px;color:#94a3b8}
+video{width:100%;background:#000;border-radius:8px;margin:5px 0;max-height:280px;object-fit:cover}
+textarea{width:100%;height:100px;background:#2d2d2d;color:#fff;border:none;border-radius:6px;padding:10px;margin:8px 0;resize:vertical;font-family:monospace;font-size:12px}
+input{width:100%;padding:10px;background:#2d2d2d;border:none;border-radius:6px;color:#fff;margin:5px 0}
+button{padding:10px 16px;border:none;border-radius:6px;font-weight:600;cursor:pointer;margin:4px;font-size:14px}
+.btn-primary{background:#22c55e;color:#fff}
+.btn-secondary{background:#3b82f6;color:#fff}
+.btn-warning{background:#f59e0b;color:#000}
+.btn-danger{background:#ef4444;color:#fff}
+#chatLog{height:180px;overflow-y:auto;background:#252525;border-radius:6px;padding:10px;margin:8px 0;font-size:14px}
+.msg{margin:6px 0;padding:6px 10px;border-radius:16px;max-width:80%}
+.them{background:#3b82f6}
+.ta{background:#22c55e;margin-left:auto}
+.status{padding:8px 12px;border-radius:6px;margin:8px 0;font-weight:500}
+.connected{background:#166534}
+.waiting{background:#854d0e}
+.hint{font-size:12px;color:#94a3b8;margin-top:4px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1;min-width:120px}
+</style>
 </head>
-
 <body>
-    <h1>Peer-to-Peer </h1>
-    <h2>Scan to connect</h2>
-    <div id="qrcode"></div>
-    <br>
-    <div id="my-id"></div>
-    <button id="copy-button">copy</button>
-    <button id="paste-button">paste</button>
-    <br><br>
 
-    <label for="receiver-id">ID:</label><br>
-    <input type="text" id="receiver-id" title="Input the ID from receive.html">
-    <button id="connect-button">Connect</button>
-    <div id="statu" class="status"></div>
-    <br>
-    <button id="goi-button">Gọi</button>
-    <button id="gha-button">Gọi hình ảnh</button>
-    <button id="gf-button">Gửi file</button>
-    <br><br>
-    <button type="button" id="clearMsgsButton">Clear Msgs</button><br>
-    <br>
-    <input type="text" id="sendMessageBox" placeholder="Enter a message..." autofocus="true" />
-    <button type="button" id="sendButton">Send</button>
-    <br>
+<h1>🔗 WebRTC — Trực tiếp không máy chủ</h1>
 
+<div class="box">
+  <h2>📹 Video & Âm thanh</h2>
+  <video id="localVideo" autoplay muted playsinline></video>
+  <div class="hint">👆 Camera của bạn</div>
+  <video id="remoteVideo" autoplay playsinline></video>
+  <div class="hint">👆 Video người kia</div>
+  
+  <div class="row" style="margin-top:10px">
+    <button id="startCam" class="btn-primary">Bật Camera</button>
+    <button id="stopCam" class="btn-danger" disabled>Tắt Camera</button>
+  </div>
+</div>
 
-    <div class="message" id="message"></div>
+<div class="box">
+  <h2>🔄 Kết nối — Copy & Paste SDP</h2>
+  <div id="status" class="status waiting">Chưa kết nối</div>
+  
+  <div>
+    <button id="btnCreateOffer" class="btn-primary" disabled>1. Tạo Mã Kết Nối (Bên Gọi)</button>
+  </div>
+  
+  <label>📤 Sao chép khối dưới gửi sang bên kia:</label>
+  <textarea id="mySDP" readonly placeholder="Mã SDP của bạn sẽ hiện ở đây"></textarea>
+  
+  <label>📥 Dán mã của người kia vào đây:</label>
+  <textarea id="remoteSDP" placeholder="Dán SDP người nhận vào đây"></textarea>
+  
+  <div class="row">
+    <button id="btnConnect" class="btn-secondary" disabled>2. Kết Nối / Trả Lời</button>
+    <button id="btnClear" class="btn-warning">Xóa Dữ Liệu</button>
+  </div>
+  <p class="hint">💡 Chỉ cần trao đổi 1 lần — sau đó dữ liệu đi trực tiếp giữa 2 máy</p>
+</div>
 
-    <script src="main.js"></script>
+<div class="box">
+  <h2>💬 Tin Nhắn</h2>
+  <div id="chatLog"></div>
+  <div style="display:flex;gap:8px">
+    <input id="msgInput" placeholder="Nhập tin nhắn..." disabled>
+    <button id="sendBtn" class="btn-primary" disabled>Gửi</button>
+  </div>
+</div>
 
+<script>
+// === Cấu hình ===
+const config = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478?transport=udp' }
+  ]
+};
+
+// === Biến toàn cục ===
+let pc = null;
+let localStream = null;
+let dataChannel = null;
+let isInitiator = false;
+
+// === Phần tử giao diện ===
+const localVideo = document.getElementById('localVideo');
+const remoteVideo = document.getElementById('remoteVideo');
+const startCamBtn = document.getElementById('startCam');
+const stopCamBtn = document.getElementById('stopCam');
+const btnCreateOffer = document.getElementById('btnCreateOffer');
+const btnConnect = document.getElementById('btnConnect');
+const mySDP = document.getElementById('mySDP');
+const remoteSDP = document.getElementById('remoteSDP');
+const statusEl = document.getElementById('status');
+const chatLog = document.getElementById('chatLog');
+const msgInput = document.getElementById('msgInput');
+const sendBtn = document.getElementById('sendBtn');
+const btnClear = document.getElementById('btnClear');
+
+// === Cập nhật trạng thái ===
+function setStatus(text, type) {
+  statusEl.className = `status ${type}`;
+  statusEl.textContent = text;
+}
+
+// === Bật Camera ===
+startCamBtn.addEventListener('click', async () => {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ 
+      video: true, 
+      audio: true 
+    });
+    localVideo.srcObject = localStream;
+    startCamBtn.disabled = true;
+    stopCamBtn.disabled = false;
+    btnCreateOffer.disabled = false;
+    btnConnect.disabled = false;
+    setStatus('✅ Camera đã sẵn sàng — tạo kết nối hoặc trả lời', 'waiting');
+  } catch (err) {
+    alert('Lỗi truy cập camera: ' + err.message);
+  }
+});
+
+// === Tắt Camera ===
+stopCamBtn.addEventListener('click', () => {
+  if (localStream) {
+    localStream.getTracks().forEach(t => t.stop());
+    localStream = null;
+  }
+  localVideo.srcObject = null;
+  remoteVideo.srcObject = null;
+  startCamBtn.disabled = false;
+  stopCamBtn.disabled = true;
+  btnCreateOffer.disabled = true;
+  btnConnect.disabled = true;
+  if (pc) { pc.close(); pc = null; }
+  setStatus('🔌 Đã ngắt kết nối', 'waiting');
+});
+
+// === Tạo kết nối ngang hàng ===
+function createPeerConnection() {
+  pc = new RTCPeerConnection(config);
+  
+  // Thêm luồng camera cục bộ vào kết nối
+  if (localStream) {
+    localStream.getTracks().forEach(track => {
+      pc.addTrack(track, localStream);
+    });
+  }
+  
+  // Nhận luồng từ xa
+  pc.ontrack = (event) => {
+    remoteVideo.srcObject = event.streams[0];
+  };
+  
+  // Lắng nghe trạng thái kết nối
+  pc.onconnectionstatechange = () => {
+    console.log('Trạng thái:', pc.connectionState);
+    if (pc.connectionState === 'connected') {
+      setStatus('✅ ĐÃ KẾT NỐI — Truyền trực tiếp P2P!', 'connected');
+      msgInput.disabled = false;
+      sendBtn.disabled = false;
+    } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+      setStatus('⚠️ Mất kết nối', 'waiting');
+    }
+  };
+  
+  // Nhận dữ liệu ICE (địa chỉ kết nối)
+  pc.onicecandidate = (e) => {
+    if (!e.candidate) {
+      // Đã thu thập xong → hiển thị toàn bộ SDP
+      mySDP.value = pc.localDescription.sdp;
+    }
+  };
+  
+  // Tạo kênh dữ liệu (chỉ bên gọi tạo trước)
+  pc.ondatachannel = (event) => {
+    dataChannel = event.channel;
+    setupDataChannel();
+  };
+  
+  return pc;
+}
+
+// === Cấu hình kênh tin nhắn ===
+function setupDataChannel() {
+  dataChannel.onmessage = (e) => {
+    appendMessage(e.data, 'them');
+  };
+  dataChannel.onopen = () => {
+    setStatus('✅ Kênh tin nhắn đã mở!', 'connected');
+    msgInput.disabled = false;
+    sendBtn.disabled = false;
+  };
+  dataChannel.onclose = () => {
+    msgInput.disabled = true;
+    sendBtn.disabled = true;
+  };
+}
+
+// === Tạo Offer — Bên khởi tạo ===
+btnCreateOffer.addEventListener('click', async () => {
+  isInitiator = true;
+  createPeerConnection();
+  
+  // Tạo kênh dữ liệu
+  dataChannel = pc.createDataChannel('chat');
+  setupDataChannel();
+  
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  setStatus('⏳ Đang thu thập thông tin... Vui lòng chờ vài giây', 'waiting');
+});
+
+// === Kết nối / Trả lời ===
+btnConnect.addEventListener('click', async () => {
+  const sdpText = remoteSDP.value.trim();
+  if (!sdpText) return alert('Dán SDP của người kia trước!');
+  
+  try {
+    if (!pc) createPeerConnection();
+    
+    const remoteDesc = new RTCSessionDescription({
+      type: isInitiator ? 'answer' : 'offer',
+      sdp: sdpText
+    });
+    
+    await pc.setRemoteDescription(remoteDesc);
+    
+    // Nếu là bên nhận → tạo Answer
+    if (!isInitiator) {
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      setStatus('⏳ Đang tạo phản hồi... Chờ vài giây', 'waiting');
+    }
+  } catch (err) {
+    alert('Lỗi kết nối: ' + err.message);
+  }
+});
+
+// === Thêm tin nhắn vào màn hình ===
+function appendMessage(text, who) {
+  const div = document.createElement('div');
+  div.className = `msg ${who}`;
+  div.textContent = text;
+  chatLog.appendChild(div);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+// === Gửi tin nhắn ===
+function sendMessage() {
+  const text = msgInput.value.trim();
+  if (!text || !dataChannel || dataChannel.readyState !== 'open') return;
+  
+  dataChannel.send(text);
+  appendMessage(text, 'ta');
+  msgInput.value = '';
+}
+
+sendBtn.addEventListener('click', sendMessage);
+msgInput.addEventListener('keydown', e => e.key === 'Enter' && sendMessage());
+
+// === Xóa dữ liệu ===
+btnClear.addEventListener('click', () => {
+  mySDP.value = '';
+  remoteSDP.value = '';
+  chatLog.innerHTML = '';
+  isInitiator = false;
+});
+</script>
 </body>
-
 </html>
