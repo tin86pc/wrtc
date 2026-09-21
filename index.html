@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WebRTC — Giao tiếp trực tiếp</title>
+<title>WebRTC — Giao tiếp trực tiếp P2P</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
 body{background:#121212;color:#fff;padding:15px;max-width:900px;margin:0 auto}
@@ -47,7 +47,7 @@ button:disabled{opacity:0.4;cursor:not-allowed}
     <button id="startCam" class="btn-primary">Bật Camera</button>
     <button id="stopCam" class="btn-danger" disabled>Tắt Camera</button>
   </div>
-  <p class="hint">💡 Mạng 4G: đã hỗ trợ TURN — tạo mã nhanh hơn</p>
+  <p class="hint">💡 Đã sửa lỗi cấu hình — mạng 4G cũng dùng được</p>
 </div>
 
 <div class="box">
@@ -68,7 +68,7 @@ button:disabled{opacity:0.4;cursor:not-allowed}
     <button id="btnConnect" class="btn-secondary">2. Kết Nối / Trả Lời</button>
     <button id="btnClear" class="btn-warning">Xóa Dữ Liệu</button>
   </div>
-  <p class="hint">💡 Mã hiện ngay — không cần chờ! Dán sang bên kia luôn</p>
+  <p class="hint">💡 Mã hiện ngay — không cần chờ!</p>
 </div>
 
 <div class="box">
@@ -81,19 +81,21 @@ button:disabled{opacity:0.4;cursor:not-allowed}
 </div>
 
 <script>
-// === Cấu hình — Thêm TURN để mạng 4G cũng dùng được ===
+// === CẤU HÌNH ĐÃ SỬA — Đúng chuẩn WebRTC ===
 const config = {
   iceServers: [
+    // STUN — đúng định dạng, KHÔNG có ?transport=udp
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
-    // TURN dự phòng — quan trọng nhất cho mạng 4G
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    // TURN dự phòng — có ?transport=udp được phép
     { 
-      urls: 'turn:relay.metered.ca:80',
+      urls: 'turn:relay.metered.ca:80?transport=udp',
       username: 'open',
       credential: 'open'
     },
     { 
-      urls: 'turn:relay.metered.ca:443',
+      urls: 'turn:relay.metered.ca:443?transport=tcp',
       username: 'open',
       credential: 'open'
     }
@@ -184,7 +186,7 @@ function createPeerConnection() {
     }
   };
   
-  // Cập nhật SDP ngay khi có, không đợi hoàn thành
+  // Cập nhật SDP ngay khi có
   pc.onicecandidate = (e) => {
     if (pc.localDescription && pc.localDescription.sdp) {
       mySDP.value = pc.localDescription.sdp;
@@ -230,12 +232,13 @@ btnCreateOffer.addEventListener('click', async () => {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     
-    // Hiển thị NGAY không cần chờ ICE
+    // Hiển thị NGAY không cần chờ
     mySDP.value = pc.localDescription.sdp;
     setStatus(statusEl, '✅ Mã đã sẵn sàng — Copy & Gửi!', 'ok');
     
   } catch (err) {
     setStatus(statusEl, `❌ Lỗi: ${err.message}`, 'error');
+    alert('Chi tiết lỗi: ' + err.message);
   }
 });
 
