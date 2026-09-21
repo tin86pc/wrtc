@@ -47,7 +47,7 @@ button:disabled{opacity:0.4;cursor:not-allowed}
     <button id="startCam" class="btn-primary">Bật Camera</button>
     <button id="stopCam" class="btn-danger" disabled>Tắt Camera</button>
   </div>
-  <p class="hint">💡 Đã sửa lỗi SDP — tự lọc dòng không hợp lệ</p>
+  <p class="hint">💡 Đã lọc toàn bộ dòng SDP không tương thích với điện thoại</p>
 </div>
 
 <div class="box">
@@ -68,7 +68,7 @@ button:disabled{opacity:0.4;cursor:not-allowed}
     <button id="btnConnect" class="btn-secondary">2. Kết Nối / Trả Lời</button>
     <button id="btnClear" class="btn-warning">Xóa Dữ Liệu</button>
   </div>
-  <p class="hint">💡 Tự sửa lỗi định dạng khi dán mã</p>
+  <p class="hint">💡 Tự lọc dòng không hợp lệ — tương thích mọi trình duyệt</p>
 </div>
 
 <div class="box">
@@ -100,15 +100,17 @@ const config = {
   ]
 };
 
-// === Làm sạch SDP — XÓA dòng gây lỗi ===
+// === LÀM SẠCH SDP — Lọc TẤT CẢ dòng gây lỗi ===
 function cleanSDP(sdp) {
   if (!sdp) return sdp;
   return sdp
     .split('\n')
     .filter(line => {
       const trimmed = line.trim();
-      // Bỏ dòng gây lỗi
+      // Bỏ các dòng không được trình duyệt hỗ trợ
       if (trimmed.startsWith('a=max-message-size')) return false;
+      if (trimmed.startsWith('a=sctp-port')) return false;
+      if (trimmed.startsWith('a=ice-options:')) return false;
       return true;
     })
     .join('\n');
@@ -200,7 +202,6 @@ function createPeerConnection() {
   
   pc.onicecandidate = (e) => {
     if (pc.localDescription && pc.localDescription.sdp) {
-      // Làm sạch SDP trước khi hiển thị
       mySDP.value = cleanSDP(pc.localDescription.sdp);
       if (!e.candidate) {
         setStatus(statusEl, '✅ Mã đầy đủ — Copy & Gửi!', 'ok');
@@ -261,7 +262,7 @@ btnConnect.addEventListener('click', async () => {
     return;
   }
   
-  // === LÀM SẠCH SDP TRƯỚC KHI XỬ LÝ ===
+  // Làm sạch SDP trước khi xử lý
   sdpText = cleanSDP(sdpText);
   
   try {
