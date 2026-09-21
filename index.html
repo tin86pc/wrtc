@@ -47,7 +47,7 @@ button:disabled{opacity:0.4;cursor:not-allowed}
     <button id="startCam" class="btn-primary">Bật Camera</button>
     <button id="stopCam" class="btn-danger" disabled>Tắt Camera</button>
   </div>
-  <p class="hint">💡 Đã sửa lỗi cấu hình — mạng 4G cũng dùng được</p>
+  <p class="hint">💡 Đã sửa lỗi SDP — tự lọc dòng không hợp lệ</p>
 </div>
 
 <div class="box">
@@ -68,7 +68,7 @@ button:disabled{opacity:0.4;cursor:not-allowed}
     <button id="btnConnect" class="btn-secondary">2. Kết Nối / Trả Lời</button>
     <button id="btnClear" class="btn-warning">Xóa Dữ Liệu</button>
   </div>
-  <p class="hint">💡 Mã hiện ngay — không cần chờ!</p>
+  <p class="hint">💡 Tự sửa lỗi định dạng khi dán mã</p>
 </div>
 
 <div class="box">
@@ -81,14 +81,12 @@ button:disabled{opacity:0.4;cursor:not-allowed}
 </div>
 
 <script>
-// === CẤU HÌNH ĐÃ SỬA — Đúng chuẩn WebRTC ===
+// === Cấu hình đúng chuẩn ===
 const config = {
   iceServers: [
-    // STUN — đúng định dạng, KHÔNG có ?transport=udp
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
-    // TURN dự phòng — có ?transport=udp được phép
     { 
       urls: 'turn:relay.metered.ca:80?transport=udp',
       username: 'open',
@@ -101,6 +99,20 @@ const config = {
     }
   ]
 };
+
+// === Làm sạch SDP — XÓA dòng gây lỗi ===
+function cleanSDP(sdp) {
+  if (!sdp) return sdp;
+  return sdp
+    .split('\n')
+    .filter(line => {
+      const trimmed = line.trim();
+      // Bỏ dòng gây lỗi
+      if (trimmed.startsWith('a=max-message-size')) return false;
+      return true;
+    })
+    .join('\n');
+}
 
 // === Biến ===
 let pc = null;
@@ -186,10 +198,10 @@ function createPeerConnection() {
     }
   };
   
-  // Cập nhật SDP ngay khi có
   pc.onicecandidate = (e) => {
     if (pc.localDescription && pc.localDescription.sdp) {
-      mySDP.value = pc.localDescription.sdp;
+      // Làm sạch SDP trước khi hiển thị
+      mySDP.value = cleanSDP(pc.localDescription.sdp);
       if (!e.candidate) {
         setStatus(statusEl, '✅ Mã đầy đủ — Copy & Gửi!', 'ok');
       }
@@ -232,8 +244,7 @@ btnCreateOffer.addEventListener('click', async () => {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     
-    // Hiển thị NGAY không cần chờ
-    mySDP.value = pc.localDescription.sdp;
+    mySDP.value = cleanSDP(pc.localDescription.sdp);
     setStatus(statusEl, '✅ Mã đã sẵn sàng — Copy & Gửi!', 'ok');
     
   } catch (err) {
@@ -244,11 +255,14 @@ btnCreateOffer.addEventListener('click', async () => {
 
 // === Kết nối / Trả lời ===
 btnConnect.addEventListener('click', async () => {
-  const sdpText = remoteSDP.value.trim();
+  let sdpText = remoteSDP.value.trim();
   if (!sdpText) {
     alert('Vui lòng dán SDP của người kia trước!');
     return;
   }
+  
+  // === LÀM SẠCH SDP TRƯỚC KHI XỬ LÝ ===
+  sdpText = cleanSDP(sdpText);
   
   try {
     if (!pc) createPeerConnection();
@@ -262,7 +276,7 @@ btnConnect.addEventListener('click', async () => {
       setStatus(statusEl, '⏳ Đang tạo phản hồi...', 'waiting');
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      mySDP.value = pc.localDescription.sdp;
+      mySDP.value = cleanSDP(pc.localDescription.sdp);
       setStatus(statusEl, '✅ Mã phản hồi — Copy & Gửi lại!', 'ok');
     }
   } catch (err) {
